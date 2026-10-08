@@ -1,0 +1,476 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Stone by Stone</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Baloo+2:wght@600;800&display=swap">
+<style>
+/* Layout: one narrow column, like a phone game. The temple (five pillars of seven stones) is the scoreboard;
+   everything a child can tap is drawn as a cut block of stone. Day sky in light theme, night site in dark. */
+:root{
+  --bg:#DCEAF0; --surface:#FBFCFA; --ink:#1D2B36; --muted:#566874; --line:#C3D3DB;
+  --stone:#E6BC72; --stone-edge:#B4853A; --stone-hi:#F5DBA6; --stone-ink:#3B2A0E;
+  --empty:#9DB2BE; --empty-fill:#CFE0E7;
+  --accent:#1F5FBF; --accent-edge:#164389; --accent-ink:#FFFFFF;
+  --good:#17784D; --good-bg:#D9F0E3; --bad:#B93A2A; --bad-bg:#F8DEDA; --warn:#8A5A0B; --warn-bg:#FBEBC8;
+  --gold:#F2B705; --gold-edge:#B98600;
+  --display:"Baloo 2","Trebuchet MS","Segoe UI",system-ui,sans-serif;
+  --body:"Atkinson Hyperlegible","Verdana","Segoe UI",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0F1A28; --surface:#18273A; --ink:#E9EFF4; --muted:#9FB2C2; --line:#2C4158;
+  --stone:#D8A654; --stone-edge:#8B6526; --stone-hi:#EDC98A; --stone-ink:#2B1E08;
+  --empty:#4A6278; --empty-fill:#1B2C40;
+  --accent:#78AEFF; --accent-edge:#3F74C4; --accent-ink:#0A1525;
+  --good:#58CC95; --good-bg:#173B2C; --bad:#FF8A76; --bad-bg:#472220; --warn:#F2BC5E; --warn-bg:#43330F;
+  --gold:#FFCB3D; --gold-edge:#B98A0C; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#0F1A28; --surface:#18273A; --ink:#E9EFF4; --muted:#9FB2C2; --line:#2C4158;
+  --stone:#D8A654; --stone-edge:#8B6526; --stone-hi:#EDC98A; --stone-ink:#2B1E08;
+  --empty:#4A6278; --empty-fill:#1B2C40;
+  --accent:#78AEFF; --accent-edge:#3F74C4; --accent-ink:#0A1525;
+  --good:#58CC95; --good-bg:#173B2C; --bad:#FF8A76; --bad-bg:#472220; --warn:#F2BC5E; --warn-bg:#43330F;
+  --gold:#FFCB3D; --gold-edge:#B98A0C; color-scheme:dark }
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.5}
+.wrap{max-width:560px;margin-inline:auto;padding-inline:16px;padding-block:20px 56px;display:flex;flex-direction:column;gap:18px}
+h1,h2,h3{font-family:var(--display);line-height:1.1;margin:0;text-wrap:balance}
+h1{font-size:2.5rem;font-weight:800;letter-spacing:-.01em}
+h2{font-size:1.75rem;font-weight:800}
+h3{font-size:1.3rem;font-weight:800}
+p{margin:0}
+.sub{color:var(--muted)}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+/* blocks you can tap */
+.btn{font-family:var(--display);font-weight:800;font-size:1.1rem;line-height:1.2;border:0;border-radius:6px;padding:12px 18px;
+  background:var(--surface);color:var(--ink);box-shadow:inset 0 0 0 2px var(--line),0 3px 0 var(--line);text-align:center}
+.btn.primary{background:var(--accent);color:var(--accent-ink);box-shadow:0 4px 0 var(--accent-edge)}
+.btn:active{transform:translateY(2px)}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.btns{display:flex;flex-wrap:wrap;gap:10px}
+.btns .btn{flex:1 1 150px}
+.link{background:none;border:0;padding:6px 0;color:var(--accent);font-weight:700;text-decoration:underline;text-underline-offset:3px}
+.card{background:var(--surface);border-radius:8px;padding:16px;box-shadow:0 2px 0 var(--line)}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.pill{font-size:.85rem;font-weight:700;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+.how{font-size:1.05rem}
+.meta{color:var(--muted);font-size:.95rem}
+
+/* the temple */
+.temple{display:flex;flex-direction:column;align-items:stretch;max-width:420px;width:100%;margin-inline:auto}
+.roof{height:70px;clip-path:polygon(50% 0,100% 100%,0 100%);background:var(--empty-fill);display:flex;align-items:flex-end;justify-content:center;padding-bottom:6px;
+  font-family:var(--display);font-weight:800;font-size:.9rem;color:var(--muted)}
+.roof.on{background:var(--stone);color:var(--stone-ink)}
+.roof.gold{background:var(--gold);color:var(--stone-ink)}
+.beam,.base{height:12px;background:var(--empty-fill);border-radius:2px}
+.beam.on,.base{background:var(--stone);box-shadow:inset 0 -3px 0 var(--stone-edge)}
+.base{margin-inline:-8px;height:14px}
+.pillars{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;padding:6px 10px 0}
+.pillar{background:none;border:0;padding:0 0 6px;display:flex;flex-direction:column;gap:6px;align-items:stretch;min-width:0}
+.blocks{display:flex;flex-direction:column;gap:3px}
+.blk{display:block;height:17px;border-radius:2px;border:2px dashed var(--empty)}
+.blk.on{border:0;background:var(--stone);box-shadow:inset 0 -4px 0 var(--stone-edge),inset 0 2px 0 var(--stone-hi)}
+.plabel{font-family:var(--display);font-weight:800;font-size:.85rem;text-align:center;color:var(--ink);white-space:nowrap}
+.count{text-align:center;font-family:var(--display);font-weight:800;font-size:1.15rem}
+
+/* verse list */
+.verses{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.vrow{width:100%;text-align:left;border:0;background:var(--surface);border-radius:8px;padding:12px 14px;box-shadow:0 3px 0 var(--line);
+  display:grid;grid-template-columns:1fr auto;gap:2px 12px;align-items:center}
+.vrow b{font-family:var(--display);font-weight:800;font-size:1.2rem}
+.vrow .starts{grid-column:1;color:var(--muted);font-size:.95rem;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vrow .n{grid-row:1/3;grid-column:2;text-align:right;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.vrow .n small{display:block;font-weight:400;color:var(--muted);font-size:.8rem}
+.chip{display:inline-block;font-size:.78rem;font-weight:700;border-radius:99px;padding:1px 8px;background:var(--warn-bg);color:var(--warn)}
+
+/* verse screen */
+.versetext{font-size:1.15rem;line-height:1.65}
+.versetext .ref{display:block;margin-top:8px;font-weight:700}
+.levels{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.lrow{width:100%;text-align:left;border:0;border-radius:6px;padding:10px 12px;background:var(--surface);box-shadow:0 3px 0 var(--line);
+  display:grid;grid-template-columns:38px 1fr auto;gap:12px;align-items:center}
+.lrow .num{height:34px;border-radius:3px;border:2px dashed var(--empty);display:grid;place-items:center;font-family:var(--display);font-weight:800;color:var(--muted)}
+.lrow.done .num{border:0;background:var(--stone);color:var(--stone-ink);box-shadow:inset 0 -4px 0 var(--stone-edge),inset 0 2px 0 var(--stone-hi)}
+.lrow b{display:block;font-family:var(--display);font-weight:800;font-size:1.12rem;line-height:1.2}
+.lrow span.d{color:var(--muted);font-size:.92rem;display:block;line-height:1.3}
+.lrow .st{font-size:.85rem;font-weight:700;color:var(--muted);white-space:nowrap}
+.lrow.done .st{color:var(--good)}
+.lrow.next{box-shadow:inset 0 0 0 2px var(--accent),0 3px 0 var(--accent-edge)}
+.lrow.next .st{color:var(--accent)}
+
+/* stack the phrases */
+.built,.pile{display:flex;flex-direction:column;gap:6px}
+.built:empty::before{content:"Your wall goes here.";color:var(--muted);border:2px dashed var(--empty);border-radius:4px;padding:10px 12px}
+.built .laid{background:var(--stone);color:var(--stone-ink);border-radius:3px;padding:8px 12px;box-shadow:inset 0 -4px 0 var(--stone-edge),inset 0 2px 0 var(--stone-hi);font-weight:700}
+.chunk{border:0;border-radius:4px;background:var(--surface);padding:11px 12px;text-align:left;box-shadow:inset 0 0 0 2px var(--line),0 3px 0 var(--line);font-size:1.05rem}
+.shake{animation:shake .3s}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+/* look, cover, spell */
+.flashword{font-family:var(--body);font-weight:700;font-size:2.1rem;letter-spacing:.06em;text-align:center;padding:14px 0;min-height:1.6em;overflow-wrap:anywhere}
+.flashword.covered{color:var(--muted);letter-spacing:.3em}
+.stack{display:flex;flex-direction:column;gap:12px}
+.inrow{display:flex;gap:8px}
+.inrow input{flex:1;min-width:0}
+input[type=text],textarea{width:100%;font-size:1.15rem;padding:11px 12px;border-radius:6px;border:2px solid var(--line);background:var(--surface);color:var(--ink)}
+input[type=text]:focus,textarea:focus{border-color:var(--accent);outline:none}
+textarea{resize:vertical;line-height:1.5}
+label{font-weight:700;display:block;margin-bottom:4px}
+.fb{font-weight:700;min-height:1.5em}
+.fb.ok{color:var(--good)} .fb.no{color:var(--bad)}
+
+/* word-by-word typing */
+.runbox{background:var(--surface);border-radius:8px;padding:12px 14px;font-size:1.12rem;line-height:1.9;max-height:11.6em;overflow-y:auto;box-shadow:0 2px 0 var(--line);position:relative}
+.rw{white-space:nowrap}
+.rw .gap{display:inline-block;border-bottom:2px solid var(--empty);height:1.05em;vertical-align:-2px}
+.rw.typed .core{color:var(--good);font-weight:700}
+.rw.helped .core{color:var(--warn);font-weight:700}
+.rw.cur{background:var(--warn-bg);border-radius:4px;padding:2px 3px;margin:-2px -3px}
+.rw.cur .gap{border-color:var(--accent)}
+.rw.cur .show{color:var(--warn);font-weight:700}
+
+/* marking */
+.marked{font-size:1.1rem;line-height:1.9}
+.mw.sub,.mw.miss{background:var(--bad-bg);color:var(--bad);font-weight:700;border-radius:3px;padding:1px 3px}
+.mw.miss{text-decoration:underline dotted}
+.mw.punct{background:var(--warn-bg);color:var(--warn);font-weight:700;border-radius:3px;padding:1px 3px}
+.fixes{margin:10px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:4px}
+.fixes q{font-weight:700;quotes:"\201C" "\201D"}
+.key{font-size:.9rem;color:var(--muted);margin-top:8px}
+.score{font-family:var(--display);font-weight:800;font-size:1.25rem}
+.score.bad{color:var(--bad)} .score.good{color:var(--good)}
+
+/* results */
+.result{border-radius:8px;padding:16px;background:var(--surface);box-shadow:0 2px 0 var(--line);display:flex;flex-direction:column;gap:10px}
+.result.win{background:var(--good-bg)}
+.result .blk{width:120px;height:26px}
+.drop{animation:drop .55s cubic-bezier(.3,1.5,.5,1)}
+@keyframes drop{from{transform:translateY(-70px);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.drop,.shake{animation:none}}
+
+/* paper check */
+.checks{display:flex;flex-direction:column;gap:6px}
+.check{display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:center;text-align:left;border:0;border-radius:4px;background:var(--surface);padding:10px 12px;box-shadow:inset 0 0 0 2px var(--line);font-size:1.08rem}
+.check i{width:24px;height:24px;border-radius:4px;border:2px solid var(--empty);display:grid;place-items:center;font-style:normal;font-weight:700}
+.check[aria-pressed=true]{background:var(--good-bg);box-shadow:inset 0 0 0 2px var(--good)}
+.check[aria-pressed=true] i{background:var(--good);border-color:var(--good);color:var(--surface)}
+.check[aria-pressed=true] i::before{content:"\2713"}
+
+details{background:var(--surface);border-radius:8px;padding:12px 14px}
+summary{font-weight:700;cursor:pointer}
+details ul{margin:10px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+.cert{border:3px solid var(--gold-edge);background:var(--surface);border-radius:8px;padding:18px;text-align:center;display:flex;flex-direction:column;gap:6px}
+.cert h3{font-size:1.5rem}
+</style>
+
+<div class="wrap" id="app"></div>
+
+<script>
+(function(){
+'use strict';
+
+/* The verses, exactly as printed on the Juniors 2026 sheet, split into phrases. */
+var VERSES=[
+ {id:'heb',ref:'Hebrews 4:16',short:'Heb 4',
+  chunks:["Let us have confidence, then,","and approach God's throne,","where there is grace.","There we will receive mercy","and find grace to help us","just when we need it."],
+  tricky:["confidence","approach","God's","throne","receive","mercy"]},
+ {id:'jn',ref:'I John 1:8,9',short:'1 Jn 1',
+  chunks:["If we say that we have no sin,","we deceive ourselves,","and there is no truth in us.","But if we confess our sins to God,","he will keep his promise","and do what is right:","he will forgive us our sins","and purify us from all our wrongdoing."],
+  tricky:["deceive","ourselves","truth","confess","promise","forgive","purify","wrongdoing"]},
+ {id:'lk',ref:'Luke 4:17b-19',short:'Lk 4',
+  chunks:["Jesus unrolled the scroll","and found the place where it is written,","\"The Spirit of the Lord is upon me,","because he has chosen me","to bring good news to the poor.","He has sent me to proclaim liberty to the captives","and recovery of sight to the blind;","to set free the oppressed","and announce that the time has come","when the Lord will save his people.\""],
+  tricky:["unrolled","scroll","written","Spirit","proclaim","liberty","captives","recovery","oppressed","announce"]},
+ {id:'ps',ref:'Psalm 51:1',short:'Ps 51',
+  chunks:["Be merciful to me, O God,","because of your constant love,","because of your great mercy","wipe away my sins."],
+  tricky:["merciful","because","constant","mercy"]},
+ {id:'pet',ref:'1 Peter 2:4-5',short:'1 Pet 2',
+  chunks:["Come to the Lord, the living stone","rejected by people as worthless","but chosen by God as valuable.","Come as living stones,","and let yourselves be used","in building the spiritual temple,","where you will serve as holy priests","to offer spiritual and acceptable sacrifices","to God through Jesus Christ."],
+  tricky:["rejected","worthless","valuable","yourselves","spiritual","temple","priests","acceptable","sacrifices","Christ"]}
+];
+VERSES.forEach(function(v){v.text=v.chunks.join(' ');});
+var LEVELS=[
+ {name:'Stack the phrases',desc:'Tap the phrases in the right order.'},
+ {name:'Look, cover, spell',desc:'Learn the tricky words.'},
+ {name:'Fill the gaps',desc:'Type the missing words.'},
+ {name:'First letters',desc:'Type every word. You only get its first letter.'},
+ {name:'From memory',desc:'Type the whole verse. Every word, spelled right.'},
+ {name:'Perfect copy',desc:'Capital letters and punctuation count too.'},
+ {name:'Pen and paper',desc:'Write it by hand, then check it.'}
+];
+var TOTAL=VERSES.length*LEVELS.length;
+
+/* ---------- saved progress (this device only) ---------- */
+var KEY='stone-by-stone-v1';
+var S=(function(){try{var r=JSON.parse(localStorage.getItem(KEY));if(r&&r.v)return r;}catch(e){}return {name:'',v:{},roof:0,roofDate:0};})();
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+function vs(id){if(!S.v[id])S.v[id]={done:[0,0,0,0,0,0,0],last:0};return S.v[id];}
+function stones(id){return vs(id).done.reduce(function(a,b){return a+(b?1:0);},0);}
+function allStones(){return VERSES.reduce(function(a,v){return a+stones(v.id);},0);}
+
+/* ---------- text helpers and marking ---------- */
+var app=document.getElementById('app');
+function $(s,r){return (r||document).querySelector(s);}
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function norm(s){return String(s).replace(/[‘’ʼ`´]/g,"'").replace(/[“”]/g,'"').replace(/[–—]/g,'-').replace(/\s+([,.;:!?])/g,'$1').replace(/\s+/g,' ').trim();}
+function tokens(s){s=norm(s);return s?s.split(' '):[];}
+function bare(w){return String(w).toLowerCase().replace(/[^a-z0-9]/g,'');}
+function parts(tok){var m=/^([^A-Za-z0-9]*)(.*?)([^A-Za-z0-9]*)$/.exec(tok);return {pre:m[1],core:m[2],post:m[3]};}
+function refKey(s){s=norm(s).toLowerCase().replace(/\.$/,'');s=s.replace(/^(i|first|1st)\s+/,'1 ').replace(/^(\d)\s*([a-z])/,'$1 $2');return s.replace(/\s*([:,\-])\s*/g,'$1').replace(/,/g,'-');}
+function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function shuffleMoved(a){if(a.length<2)return a.slice();var b,same,n=0;do{b=shuffle(a);same=b.every(function(x,i){return x===a[i];});}while(same&&++n<20);return b;}
+
+/* Compare what was typed with the verse. strict=false: words in order, spelled right.
+   strict=true: capital letters and punctuation must match too. */
+function mark(expText,typed,strict){
+  var E=tokens(expText),G=tokens(typed);
+  if(!strict)G=G.filter(function(t){return bare(t)!=='';});
+  var ek=E.map(bare),gk=G.map(bare),n=E.length,m=G.length,i,j,dp=[];
+  for(i=0;i<=n;i++){dp.push(new Array(m+1).fill(0));}
+  for(i=n-1;i>=0;i--)for(j=m-1;j>=0;j--)dp[i][j]=ek[i]===gk[j]?dp[i+1][j+1]+1:Math.max(dp[i+1][j],dp[i][j+1]);
+  var status=new Array(n).fill('ok'),fixes=[],errors=0,runM=[],runX=[];
+  function show(t){return strict?t:parts(t).core;}
+  function flush(){
+    var k=0;
+    for(;k<runM.length&&k<runX.length;k++){status[runM[k]]='sub';errors++;fixes.push('You wrote <q>'+esc(show(G[runX[k]]))+'</q>. It should be <q>'+esc(show(E[runM[k]]))+'</q>.');}
+    for(var a=k;a<runM.length;a++){status[runM[a]]='miss';errors++;fixes.push('You left out <q>'+esc(show(E[runM[a]]))+'</q>.');}
+    for(var b=k;b<runX.length;b++){errors++;fixes.push('Extra word: <q>'+esc(G[runX[b]])+'</q>.');}
+    runM=[];runX=[];
+  }
+  i=0;j=0;
+  while(i<n||j<m){
+    if(i<n&&j<m&&ek[i]===gk[j]){flush();
+      if(strict&&E[i]!==G[j]){status[i]='punct';errors++;fixes.push('You wrote <q>'+esc(G[j])+'</q>. It should be <q>'+esc(E[i])+'</q>.');}
+      i++;j++;}
+    else if(j>=m||(i<n&&dp[i+1][j]>=dp[i][j+1])){runM.push(i);i++;}
+    else{runX.push(j);j++;}
+  }
+  flush();
+  return {E:E,status:status,fixes:fixes,errors:errors};
+}
+function markedHTML(res,refOk,v,strict){
+  var n=res.errors+(refOk?0:1);
+  var h='<div class="card"><p class="score bad">'+n+(n===1?' mistake':' mistakes')+' to fix</p><p class="marked">'+
+    res.E.map(function(t,i){return '<span class="mw '+res.status[i]+'">'+esc(t)+'</span>';}).join(' ')+'</p><ul class="fixes">'+
+    res.fixes.map(function(f){return '<li>'+f+'</li>';}).join('')+(refOk?'':'<li>The reference is <q>'+esc(v.ref)+'</q>.</li>')+'</ul>'+
+    '<p class="key">Red is a wrong or missing word.'+(strict?' Amber is the right word with a capital letter or punctuation mark to fix.':'')+'</p></div>';
+  return h;
+}
+function ago(t){if(!t)return 'Not started';var a=new Date(t),b=new Date();a.setHours(0,0,0,0);b.setHours(0,0,0,0);var d=Math.round((b-a)/864e5);return d<=0?'Played today':d===1?'Played yesterday':'Played '+d+' days ago';}
+function shake(el){el.classList.remove('shake');void el.offsetWidth;el.classList.add('shake');}
+var NOFIX='autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"';
+
+/* ---------- home ---------- */
+function home(){
+  var total=allStones();
+  var h='<header><h1>Stone by Stone</h1><p class="sub">'+(S.name?esc(S.name)+', learn':'Learn')+' five verses so well you can write them without one mistake. Each stone you earn goes into the temple.</p></header>';
+  if(S.roof){h+='<div class="cert"><p class="pill">Master builder</p><h3>'+esc(S.name||'You')+' raised the '+(S.roof===2?'golden ':'')+'roof</h3><p>All five verses written from memory, first time, on '+new Date(S.roofDate||Date.now()).toLocaleDateString(undefined,{day:'numeric',month:'long',year:'numeric'})+'.</p></div>';}
+  if(!S.name){h+='<form class="card stack" id="nf"><div><label for="nm">What is your first name, builder?</label><div class="inrow"><input type="text" id="nm" maxlength="20" autocomplete="off"><button class="btn primary">Start</button></div></div></form>';}
+  h+='<div class="temple"><div class="roof'+(S.roof?' on':'')+(S.roof===2?' gold':'')+'">'+(S.roof?'':'Roof')+'</div><div class="beam'+(S.roof?' on':'')+'"></div><div class="pillars">'+
+    VERSES.map(function(v){var d=vs(v.id).done;var b='';for(var i=6;i>=0;i--)b+='<i class="blk'+(d[i]?' on':'')+'"></i>';
+      return '<button class="pillar" data-act="verse" data-v="'+v.id+'" aria-label="'+esc(v.ref)+', '+stones(v.id)+' of 7 stones"><span class="blocks">'+b+'</span><span class="plabel">'+v.short+'</span></button>';}).join('')+
+    '</div><div class="base"></div></div>';
+  h+='<p class="count">'+total+' of '+TOTAL+' stones placed</p>';
+  h+='<ul class="verses">'+VERSES.map(function(v){var st=vs(v.id),n=stones(v.id);var d=st.last?Math.round((Date.now()-st.last)/864e5):0;
+    return '<li><button class="vrow" data-act="verse" data-v="'+v.id+'"><b>'+esc(v.ref)+'</b><span class="starts">'+esc(v.chunks[0])+'</span><span class="n">'+n+' / 7<small>'+(n===7&&d>=3?'<span class="chip">Check-up due</span>':ago(st.last))+'</small></span></button></li>';}).join('')+'</ul>';
+  h+='<button class="btn'+(total===TOTAL?' primary':'')+'" data-act="final"'+(total===TOTAL?'':' disabled')+'>'+(S.roof?'Raise the roof again':'Raise the roof')+(total===TOTAL?'':' (place all '+TOTAL+' stones first)')+'</button>';
+  h+='<details><summary>For parents and teachers</summary><ul>'+
+    '<li>Stones 1 to 4 teach the verse. Stones 5 and 6 are only given when the whole verse is typed correctly in one go.</li>'+
+    '<li>Stone 5 marks the words, their order and their spelling. Stone 6 also marks capital letters and punctuation.</li>'+
+    '<li>Stone 7 is written by hand and checked line by line. Please look over the paper too.</li>'+
+    '<li>Turn off predictive text and auto-correct on the keyboard while your child plays. If the keyboard fixes the spelling, the practice is lost.</li>'+
+    '<li>Ten minutes a day works better than one long session. Come back to finished verses every few days.</li>'+
+    '<li>Progress is saved on this device only.</li></ul>'+
+    '<p style="margin-top:12px"><button class="link" id="reset">Clear all progress on this device</button> <span id="resetq" hidden>Sure? <button class="link" id="resety">Yes, clear it</button> <button class="link" id="resetn">No</button></span></p></details>';
+  app.innerHTML=h;window.scrollTo(0,0);
+  var nf=$('#nf');if(nf)nf.addEventListener('submit',function(e){e.preventDefault();var n=$('#nm').value.trim();if(n){S.name=n.slice(0,20);save();home();}});
+  $('#reset').addEventListener('click',function(){$('#resetq').hidden=false;});
+  $('#resetn').addEventListener('click',function(){$('#resetq').hidden=true;});
+  $('#resety').addEventListener('click',function(){S={name:S.name,v:{},roof:0,roofDate:0};save();home();});
+}
+
+/* ---------- one verse ---------- */
+function verse(v){
+  var st=vs(v.id),next=st.done.indexOf(0),open=stones(v.id)===0;
+  var h='<div class="bar"><button class="link" data-act="home">&larr; Temple</button><span class="pill">'+stones(v.id)+' of 7 stones</span></div><h2>'+esc(v.ref)+'</h2>'+
+    '<div class="card"><div class="versetext" id="vt"'+(open?'':' hidden')+'>'+v.chunks.map(esc).join('<br>')+'<span class="ref">'+esc(v.ref)+'</span></div>'+
+    '<button class="link" id="vtog">'+(open?'Hide the verse':'Show the verse')+'</button></div>'+
+    '<ol class="levels">'+LEVELS.map(function(L,i){var c=st.done[i]?' done':(i===next?' next':'');
+      return '<li><button class="lrow'+c+'" data-act="play" data-v="'+v.id+'" data-l="'+i+'"><span class="num">'+(i+1)+'</span><span><b>'+L.name+'</b><span class="d">'+L.desc+'</span></span><span class="st">'+(st.done[i]?'Placed':(i===next?'Play':''))+'</span></button></li>';}).join('')+'</ol>';
+  app.innerHTML=h;window.scrollTo(0,0);
+  $('#vtog').addEventListener('click',function(){var t=$('#vt');t.hidden=!t.hidden;this.textContent=t.hidden?'Show the verse':'Hide the verse';});
+}
+function head(v,l){return '<div class="bar"><button class="link" data-act="verse" data-v="'+v.id+'">&larr; '+esc(v.ref)+'</button><span class="pill">Stone '+(l+1)+' of 7</span></div><h2>'+LEVELS[l].name+'</h2>';}
+function finish(v,l,won,title,body){
+  var st=vs(v.id);if(won)st.done[l]=1;st.last=Date.now();save();
+  var whole=won&&st.done.every(Boolean);
+  $('#result').innerHTML='<div class="result '+(won?'win':'')+'">'+(won?'<div class="blk on drop" aria-hidden="true"></div>':'')+'<h3>'+title+'</h3><p>'+body+(whole?' That pillar is finished.':'')+'</p><div class="btns">'+
+    (won&&l<6?'<button class="btn primary" data-act="play" data-v="'+v.id+'" data-l="'+(l+1)+'">Next: '+LEVELS[l+1].name+'</button>':'')+
+    '<button class="btn'+(won&&l<6?'':' primary')+'" data-act="play" data-v="'+v.id+'" data-l="'+l+'">'+(won?'Play again':'Try again')+'</button>'+
+    '<button class="btn" data-act="'+(whole?'home':'verse')+'" data-v="'+v.id+'">'+(whole?'See the temple':'Back to '+esc(v.ref))+'</button></div></div>';
+  $('#result').scrollIntoView({block:'nearest'});
+}
+
+/* ---------- stone 1: stack the phrases ---------- */
+function playOrder(v){
+  var next=0,slips=0;
+  app.innerHTML=head(v,0)+'<p class="how" id="how">Tap the phrases in the right order to build the verse.</p><div class="built" id="built"></div><div class="pile" id="pile"></div><p class="meta" id="meta"></p><div id="result"></div>';
+  var pile=$('#pile'),built=$('#built');
+  shuffleMoved(v.chunks.map(function(c,i){return i;})).forEach(function(i){var b=document.createElement('button');b.className='chunk';b.textContent=v.chunks[i];b.dataset.i=i;pile.appendChild(b);});
+  function meta(){$('#meta').textContent=slips?slips+(slips===1?' slip':' slips')+' so far':'';}
+  pile.addEventListener('click',function(e){
+    var b=e.target.closest('.chunk');if(!b)return;
+    if(b.dataset.ref){ if(b.dataset.ref===v.id){pile.innerHTML='';var r=document.createElement('div');r.className='laid';r.textContent=v.ref;built.appendChild(r);done();} else {slips++;meta();shake(b);} return; }
+    if(v.chunks[+b.dataset.i]===v.chunks[next]){var d=document.createElement('div');d.className='laid';d.textContent=b.textContent;built.appendChild(d);b.remove();next++;
+      if(next===v.chunks.length){$('#how').textContent='Where is this verse found?';
+        shuffle(VERSES).forEach(function(o){var x=document.createElement('button');x.className='chunk';x.textContent=o.ref;x.dataset.ref=o.id;pile.appendChild(x);});}
+    } else {slips++;meta();shake(b);}
+  });
+  function done(){ if(slips<=2)finish(v,0,true,'Stone placed!',slips?'Built with '+slips+(slips===1?' slip.':' slips.'):'Built without a single slip.');
+    else finish(v,0,false,'Nearly there',slips+' slips. Build it with 2 slips or fewer to place this stone.'); }
+}
+
+/* ---------- stone 2: look, cover, spell ---------- */
+function playFlash(v){
+  var queue=shuffle(v.tricky),second=0,cur;
+  app.innerHTML=head(v,1)+'<p class="how">Look hard at the word. Cover it. Spell it.</p><div class="card stack"><div class="flashword" id="fw"></div>'+
+    '<button class="btn primary" id="cover">Cover it</button>'+
+    '<form id="ff" hidden><label for="sp">Spell the word</label><div class="inrow"><input type="text" id="sp" '+NOFIX+'><button class="btn primary">Check</button></div></form>'+
+    '<p class="fb" id="fb"></p></div><p class="meta" id="meta"></p><div id="result"></div>';
+  var fw=$('#fw'),cover=$('#cover'),ff=$('#ff'),sp=$('#sp'),fb=$('#fb');
+  function look(){cur=queue[0];fw.textContent=cur;fw.classList.remove('covered');cover.hidden=false;ff.hidden=true;$('#meta').textContent=queue.length+(queue.length===1?' word':' words')+' to go';}
+  cover.addEventListener('click',function(){fw.textContent='?????';fw.classList.add('covered');cover.hidden=true;ff.hidden=false;sp.value='';fb.textContent='';fb.className='fb';sp.focus();});
+  ff.addEventListener('submit',function(e){e.preventDefault();var t=norm(sp.value);if(!t)return;
+    if(t.toLowerCase()===cur.toLowerCase()){queue.shift();fb.className='fb ok';fb.textContent='Yes. '+cur+' is right.';
+      if(!queue.length){fw.textContent='';ff.hidden=true;$('#meta').textContent='';finish(v,1,true,'Stone placed!',second?'Every tricky word spelled. '+second+' needed a second look.':'Every tricky word spelled first time.');return;}
+      look();
+    } else {second++;queue.push(cur);fb.className='fb no';fb.textContent='You wrote '+t+'. Look again, letter by letter.';look();}
+  });
+  look();
+}
+
+/* ---------- stones 3 and 4: type the words one at a time ---------- */
+function playRun(v,l){
+  var toks=tokens(v.text).map(parts),first=l===3,slips=0,tries=0,pos=-1,shown=false;
+  var trick={};v.tricky.forEach(function(w){trick[bare(w)]=1;});
+  toks.forEach(function(t){t.hide=first||!!trick[bare(t.core)]||Math.random()<0.34;t.state='';});
+  if(!first&&toks.filter(function(t){return t.hide;}).length<3)toks.forEach(function(t,i){if(i%2)t.hide=true;});
+  app.innerHTML=head(v,l)+'<p class="how">'+(first?'Type every word of the verse. Each word shows only its first letter.':'Type each missing word.')+' Press space after a word to check it.</p>'+
+    '<div class="runbox" id="box"></div><form id="rf" class="stack"><div><label for="rw">Next word</label><div class="inrow"><input type="text" id="rw" '+NOFIX+'><button class="btn" type="button" id="stuck">Show me</button></div></div></form><p class="meta" id="meta"></p><div id="result"></div>';
+  var box=$('#box'),inp=$('#rw');
+  function draw(){
+    box.innerHTML=toks.map(function(t,i){
+      var cls='rw',core;
+      if(!t.hide||t.state){core='<span class="core">'+esc(t.core)+'</span>';if(t.state)cls+=' '+t.state;}
+      else if(i===pos&&shown){core='<span class="show">'+esc(t.core)+'</span>';}
+      else{var n=t.core.length;core=first?esc(t.core.charAt(0))+(n>1?'<span class="gap" style="width:'+(n-1)+'ch"></span>':''):'<span class="gap" style="width:'+Math.max(3,n)+'ch"></span>';}
+      if(i===pos)cls+=' cur';
+      return '<span class="'+cls+'"'+(i===pos?' id="cur"':'')+'>'+esc(t.pre)+core+esc(t.post)+'</span>';}).join(' ');
+    var c=$('#cur');if(c)box.scrollTop=Math.max(0,c.offsetTop-box.clientHeight/2);
+    $('#meta').textContent=slips?slips+(slips===1?' slip':' slips')+' so far':'';
+  }
+  function advance(){tries=0;shown=false;pos++;while(pos<toks.length&&!toks[pos].hide)pos++;
+    if(pos>=toks.length){draw();$('#rf').hidden=true;
+      if(slips<=2)finish(v,l,true,'Stone placed!',slips?'Finished with '+slips+(slips===1?' slip.':' slips.'):'Every word right first time.');
+      else finish(v,l,false,'Good practice',slips+' slips. Finish with 2 or fewer to place this stone.');
+      return;}
+    draw();}
+  function wrong(){slips++;tries++;if(tries>=2)shown=true;inp.value='';shake(inp);draw();}
+  function check(final){var val=inp.value,t=toks[pos];if(!t)return;
+    if(val.trim()&&bare(val)===bare(t.core)){t.state=shown?'helped':'typed';inp.value='';advance();return;}
+    if(val.trim()&&(final||/\s$/.test(val)))wrong();}
+  inp.addEventListener('input',function(){check(false);});
+  $('#rf').addEventListener('submit',function(e){e.preventDefault();check(true);});
+  $('#stuck').addEventListener('click',function(){if(!shown){shown=true;slips++;draw();}inp.focus();});
+  advance();
+}
+
+/* ---------- stones 5 and 6: the whole verse from memory ---------- */
+function recallForm(){return '<form id="rcf" class="stack"><div><label for="rv">The verse</label><textarea id="rv" rows="7" '+NOFIX+'></textarea></div>'+
+  '<div><label for="rr">Where it is found</label><input type="text" id="rr" '+NOFIX+'></div><p class="fb no" id="rfb"></p><button class="btn primary">Check my answer</button></form>';}
+function watchList(v,typed){var s=mark(v.text,typed,true);return s.errors?'<div class="card"><p><b>For Perfect copy, watch these:</b></p><ul class="fixes">'+s.fixes.map(function(f){return '<li>'+f+'</li>';}).join('')+'</ul></div>':'';}
+function playRecall(v,l){
+  var strict=l===5,clean=true;
+  app.innerHTML=head(v,l)+'<p class="how">Type <b>'+esc(v.ref)+'</b> from memory, then its reference. '+(strict?'This time capital letters and every punctuation mark count.':'Every word must be there, in order, spelled correctly.')+' You earn the stone when it is right in one go.</p>'+recallForm()+'<div id="marked" class="stack"></div><div id="result"></div>';
+  var f=$('#rcf'),ta=$('#rv'),ri=$('#rr'),mk=$('#marked');
+  f.addEventListener('submit',function(e){e.preventDefault();
+    if(!ta.value.trim()){$('#rfb').textContent='Type the verse first.';return;}
+    $('#rfb').textContent='';
+    var res=mark(v.text,ta.value,strict),refOk=refKey(ri.value)===refKey(v.ref),n=res.errors+(refOk?0:1);
+    f.hidden=true;vs(v.id).last=Date.now();save();
+    if(n===0&&clean){mk.innerHTML=strict?'':watchList(v,ta.value);finish(v,l,true,'Stone placed!',strict?'Word for word, mark for mark. Now try it with pen and paper.':'Every word right, in one go.');}
+    else if(n===0){mk.innerHTML='<div class="card stack"><p class="score good">All fixed.</p><p>Now start fresh and get it right in one go to place the stone.</p><div class="btns"><button class="btn primary" id="fresh">Start fresh</button></div></div>';}
+    else{mk.innerHTML=markedHTML(res,refOk,v,strict)+'<div class="btns"><button class="btn primary" id="fix">Fix my answer</button><button class="btn" id="fresh">Start fresh</button></div>';}
+    mk.scrollIntoView({block:'start'});
+  });
+  mk.addEventListener('click',function(e){
+    if(e.target.id==='fix'){clean=false;mk.innerHTML='';f.hidden=false;ta.focus();}
+    if(e.target.id==='fresh'){clean=true;ta.value='';ri.value='';mk.innerHTML='';f.hidden=false;ta.focus();}
+  });
+}
+
+/* ---------- stone 7: pen and paper ---------- */
+function playPaper(v){
+  app.innerHTML=head(v,6)+'<div class="stack" id="pp"><p class="how">Get a pen and paper. Write <b>'+esc(v.ref)+'</b> from memory and put the reference underneath. No peeking.</p><button class="btn primary" id="wrote">I have written it</button></div><div id="result"></div>';
+  $('#wrote').addEventListener('click',function(){
+    var rows=v.chunks.concat([v.ref]);
+    $('#pp').innerHTML='<p class="how">Now check your paper one line at a time. Tap a line only if yours matches it exactly: every word, every spelling, every capital letter and punctuation mark.</p><div class="checks">'+
+      rows.map(function(c){return '<button class="check" aria-pressed="false"><i></i><span>'+esc(c)+'</span></button>';}).join('')+'</div><button class="btn primary" id="pdone">I have checked every line</button>';
+    $('#pp').addEventListener('click',function(e){var c=e.target.closest('.check');if(c)c.setAttribute('aria-pressed',c.getAttribute('aria-pressed')==='true'?'false':'true');
+      if(e.target.id==='pdone'){var miss=app.querySelectorAll('.check[aria-pressed=false]').length;e.target.hidden=true;
+        if(!miss)finish(v,6,true,'Stone placed!','Written by hand with no mistakes. Ask a grown-up to check your paper too.');
+        else finish(v,6,false,miss+(miss===1?' line':' lines')+' to fix','Write each line you missed three times on your paper. Then turn the page and write the whole verse again.');}
+    });
+  });
+}
+
+/* ---------- raise the roof: all five, cold ---------- */
+function playFinal(){
+  var order=shuffle(VERSES),k=0,firstTime=0,exact=0,clean=true;
+  function step(){
+    var v=order[k];clean=true;
+    app.innerHTML='<div class="bar"><button class="link" data-act="home">&larr; Temple</button><span class="pill">Verse '+(k+1)+' of 5</span></div><h2>Raise the roof</h2>'+
+      '<p class="how">All five verses, in a surprise order. This one begins <b>'+esc(v.text.split(' ').slice(0,3).join(' '))+'</b>. Type the whole verse and its reference.</p>'+recallForm()+'<div id="marked" class="stack"></div>';
+    var f=$('#rcf'),ta=$('#rv'),ri=$('#rr'),mk=$('#marked');
+    f.addEventListener('submit',function(e){e.preventDefault();
+      if(!ta.value.trim()){$('#rfb').textContent='Type the verse first.';return;}
+      $('#rfb').textContent='';
+      var res=mark(v.text,ta.value,false),refOk=refKey(ri.value)===refKey(v.ref),n=res.errors+(refOk?0:1);
+      f.hidden=true;
+      if(n===0){var per=mark(v.text,ta.value,true).errors===0;if(clean){firstTime++;if(per)exact++;}
+        mk.innerHTML='<div class="result win"><h3>'+(clean?'Right first time':'Fixed')+'</h3><p>'+esc(v.ref)+(clean&&per?' is perfect, punctuation and all.':' has every word in place.')+'</p></div>'+(per?'':watchList(v,ta.value))+'<div class="btns"><button class="btn primary" id="nx">'+(k<4?'Next verse':'See the result')+'</button></div>';}
+      else{clean=false;mk.innerHTML=markedHTML(res,refOk,v,false)+'<div class="btns"><button class="btn primary" id="fix">Fix my answer</button></div>';}
+      mk.scrollIntoView({block:'start'});
+    });
+    mk.addEventListener('click',function(e){
+      if(e.target.id==='fix'){mk.innerHTML='';f.hidden=false;ta.focus();}
+      if(e.target.id==='nx'){k++;if(k<5)step();else end();}
+    });
+    window.scrollTo(0,0);
+  }
+  function end(){
+    var won=firstTime===5;
+    if(won){var r=exact===5?2:1;if(r>S.roof){S.roof=r;S.roofDate=Date.now();}save();}
+    app.innerHTML='<h2>'+(won?(exact===5?'The golden roof is on':'The roof is on'):'Not this time')+'</h2><div class="result '+(won?'win':'')+'"><p>'+
+      (won?'All five verses right first time.'+(exact===5?' Every capital letter and punctuation mark too.':' '+exact+' of 5 were perfect in punctuation. Get all 5 perfect for the golden roof.'):firstTime+' of 5 were right first time. The roof needs all 5. Work on the ones that slipped and come back tomorrow.')+
+      '</p><div class="btns"><button class="btn primary" data-act="home">See the temple</button><button class="btn" data-act="final">Go again</button></div></div>';
+    window.scrollTo(0,0);
+  }
+  step();
+}
+
+/* ---------- navigation ---------- */
+var PLAY=[playOrder,playFlash,playRun,playRun,playRecall,playRecall,playPaper];
+app.addEventListener('click',function(e){
+  var b=e.target.closest('[data-act]');if(!b||b.disabled)return;
+  var v=VERSES.filter(function(x){return x.id===b.dataset.v;})[0],a=b.dataset.act;
+  if(a==='home')home();
+  else if(a==='verse'&&v)verse(v);
+  else if(a==='play'&&v){var l=+b.dataset.l;PLAY[l](v,l);window.scrollTo(0,0);}
+  else if(a==='final')playFinal();
+});
+home();
+})();
+</script>
+
+</body></html>
